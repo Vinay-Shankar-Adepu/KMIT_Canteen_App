@@ -1,0 +1,67 @@
+{
+  "project_info": {
+    "project_number": "919773132515",
+    "project_id": "kmit-college-canteen-1",
+    "storage_bucket": "kmit-college-canteen-1.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:919773132515:android:bb60be08c2954a95cb37d6",
+        "android_client_info": {
+          "package_name": "com.example.kmit_canteen"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCtfVtjbbRWOjd0TmcMEPyGF4GcbH-l5X4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:919773132515:android:967e5dc9035625a3cb37d6",
+        "android_client_info": {
+          "package_name": "com.example.kmit_canteen_clean"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCtfVtjbbRWOjd0TmcMEPyGF4GcbH-l5X4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:919773132515:android:3272560008c214e8cb37d6",
+        "android_client_info": {
+          "package_name": "com.example.kmit_college_canteen"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCtfVtjbbRWOjd0TmcMEPyGF4GcbH-l5X4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
