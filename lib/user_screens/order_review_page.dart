@@ -3,8 +3,6 @@ import 'package:hive_flutter/hive_flutter.dart';
 import '../models/cart_item.dart';
 import 'confirmed_order_page.dart';
 import '../main.dart';
-import 'package:razorpay_flutter/razorpay_flutter.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class OrderReviewPage extends StatefulWidget {
@@ -20,8 +18,7 @@ class _OrderReviewPageState extends State<OrderReviewPage> {
   late Box<CartItem> cartBox;
   late List<CartItem> cartItems;
   late double totalPrice;
-  late Razorpay _razorpay;
-  final _auth = FirebaseAuth.instance;
+  bool _isPlacingOrder = false;
 
   @override
   void initState() {
@@ -32,52 +29,39 @@ class _OrderReviewPageState extends State<OrderReviewPage> {
       0,
       (total, item) => total + (item.price * item.quantity),
     );
-
-    _razorpay = Razorpay();
-    _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handlePaymentSuccess);
-    _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
-    _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
   }
 
-  Future<void> _handlePaymentSuccess(PaymentSuccessResponse response) async {
+  Future<void> _placeOrder() async {
+    setState(() => _isPlacingOrder = true);
+    print("🔁 Starting anonymous order placement...");
+
     try {
-      final user = _auth.currentUser;
-      if (user == null) return;
-
       final now = Timestamp.now();
-
-      final userDoc =
-          await FirebaseFirestore.instance
-              .collection('users')
-              .doc(user.uid)
-              .get();
-      final userData = userDoc.data();
-      if (userData == null) return;
-
-      final orderMetaRef = FirebaseFirestore.instance
+      final metaRef = FirebaseFirestore.instance
           .collection('metadata')
           .doc('orders');
-      final orderMetaSnap = await orderMetaRef.get();
-      int current =
-          orderMetaSnap.exists ? (orderMetaSnap['count'] ?? 1000) : 1000;
+
+      final metaSnap = await metaRef.get();
+      int current = metaSnap.exists ? (metaSnap['count'] ?? 1000) : 1000;
       final newOrderId = 'O${current + 1}';
-      await orderMetaRef.set({'count': current + 1});
+      print("🆕 New Order ID: $newOrderId");
 
       final orderRef = FirebaseFirestore.instance
           .collection('orders')
           .doc(newOrderId);
-      final userRef = FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid);
+
+      await metaRef.set({'count': current + 1});
+      print("📈 Metadata updated");
 
       await orderRef.set({
         'orderId': newOrderId,
         'pickupPoint': widget.selectedPickupPoint,
-        'rollNo': userRef,
         'orderDate': now,
         'status': 'Pending',
         'totalPrice': totalPrice,
+        'userId': "anonymous",
       });
+      print("✅ Order document created");
 
       for (final item in cartItems) {
         final itemRef = FirebaseFirestore.instance
@@ -95,83 +79,29 @@ class _OrderReviewPageState extends State<OrderReviewPage> {
           tx.update(itemRef, {'orderCount': existing + item.quantity});
         });
       }
-
-      await FirebaseFirestore.instance.collection('payments').add({
-        'orderId': orderRef,
-        'amount': totalPrice,
-        'status': 'Success',
-        'paymentTime': now,
-        'userId': user.uid,
-        'razorpayPaymentId': response.paymentId,
-      });
+      print("📦 Items added to subcollection");
 
       await cartBox.clear();
+      print("🧹 Cart cleared");
 
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder:
-              (_) => OrderConfirmationPage(
-                orderId: newOrderId,
-                orderData: {
-                  'name': userData['name'],
-                  'rollNo': userData['rollNo'],
-                  'phone': userData['phoneNo'],
-                  'pickupPoint': widget.selectedPickupPoint,
-                  'items': cartItems,
-                  'total': totalPrice,
-                },
-              ),
+          builder: (_) => OrderConfirmationPage(orderId: newOrderId),
         ),
       );
-    } catch (e, st) {
-      debugPrint("❌ Payment success handler error: $e");
-      debugPrint("❌ Stacktrace: $st");
-
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("Error after payment: $e")));
-      }
-    }
-  }
-
-  void _handlePaymentError(PaymentFailureResponse response) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Payment failed. Please try again.")),
-    );
-  }
-
-  void _handleExternalWallet(ExternalWalletResponse response) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text("External wallet selected.")));
-  }
-
-  void _openCheckout() {
-    var options = {
-      'key': 'rzp_test_9bd1gY6TxxSq6Q',
-      'amount': (totalPrice * 100).toInt(),
-      'name': 'KMIT Canteen',
-      'description': 'Order Payment',
-      'prefill': {'contact': '', 'email': ''},
-      'external': {
-        'wallets': ['paytm'],
-      },
-    };
-
-    try {
-      _razorpay.open(options);
+      print("🚀 Redirected to confirmation page");
     } catch (e) {
-      debugPrint("Error: $e");
+      print("❌ Order creation error: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Failed to place order. Please try again."),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isPlacingOrder = false);
     }
-  }
-
-  @override
-  void dispose() {
-    _razorpay.clear();
-    super.dispose();
   }
 
   @override
@@ -196,105 +126,80 @@ class _OrderReviewPageState extends State<OrderReviewPage> {
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              "Order Confirmation",
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: ListView.builder(
-                itemCount: cartItems.length,
-                itemBuilder: (context, index) {
-                  final item = cartItems[index];
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    child: ListTile(
-                      leading: Image.network(
-                        item.imageUrl ?? '',
-                        width: 50,
-                        height: 50,
-                        fit: BoxFit.cover,
-                        errorBuilder:
-                            (_, __, ___) => Container(
-                              width: 50,
-                              height: 50,
-                              color: Colors.grey[300],
-                              child: const Icon(Icons.image),
+      body:
+          cartItems.isEmpty
+              ? const Center(child: Text("Your cart is empty."))
+              : Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "Order Review",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: cartItems.length,
+                        itemBuilder: (context, index) {
+                          final item = cartItems[index];
+                          return Card(
+                            child: ListTile(
+                              leading: Image.network(
+                                item.imageUrl ?? '',
+                                width: 50,
+                                height: 50,
+                                errorBuilder:
+                                    (_, __, ___) => const Icon(Icons.image),
+                              ),
+                              title: Text(item.name),
+                              trailing: Text("x${item.quantity}"),
                             ),
+                          );
+                        },
                       ),
-                      title: Text(
-                        item.name,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        const Text(
+                          "Total: ",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          "₹${totalPrice.toStringAsFixed(2)}",
+                          style: const TextStyle(fontSize: 18),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: _isPlacingOrder ? null : _placeOrder,
+                        child:
+                            _isPlacingOrder
+                                ? const CircularProgressIndicator(
+                                  color: Colors.white,
+                                )
+                                : const Text(
+                                  "Confirm Order",
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
                       ),
-                      trailing: Text("x${item.quantity}"),
                     ),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Theme.of(
-                  context,
-                ).colorScheme.primary.withAlpha((0.08 * 255).toInt()),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Theme.of(context).primaryColor),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.place),
-                  const SizedBox(width: 8),
-                  const Text(
-                    "Pick-up Point:",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      widget.selectedPickupPoint,
-                      style: const TextStyle(fontSize: 16),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                const Text(
-                  "Total:",
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  '₹${totalPrice.toStringAsFixed(2)}',
-                  style: const TextStyle(fontSize: 18),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: _openCheckout,
-                child: const Text(
-                  "Pay & Confirm",
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                  ],
                 ),
               ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

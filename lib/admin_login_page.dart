@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:fluttertoast/fluttertoast.dart';
-
-import 'admin_screens/admin_dashboard.dart';
-import 'user_screens/home_screen.dart';
+import '../admin_screens/admin_dashboard.dart';
+import '../user_screens/home_screen.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -20,36 +17,13 @@ class _LoginPageState extends State<LoginPage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   bool _isLoading = false;
-  bool _obscurePassword = true;
-  bool _rememberMe = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadSavedCredentials();
-  }
-
-  Future<void> _loadSavedCredentials() async {
-    final prefs = await SharedPreferences.getInstance();
-    final savedRoll = prefs.getString('savedRollNo');
-    final savedPassword = prefs.getString('savedPassword');
-    final remember = prefs.getBool('rememberMe') ?? false;
-
-    if (remember && savedRoll != null && savedPassword != null) {
-      setState(() {
-        _rollNumberController.text = savedRoll;
-        _passwordController.text = savedPassword;
-        _rememberMe = true;
-      });
-    }
-  }
 
   Future<void> _login() async {
     final rollNo = _rollNumberController.text.trim();
     final password = _passwordController.text.trim();
 
     if (rollNo.isEmpty || password.isEmpty) {
-      _showSnackBar("Please fill all fields");
+      _showSnackBar("Please enter both roll number and password.");
       return;
     }
 
@@ -57,77 +31,54 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       final email = "$rollNo@kmit.in";
+
+      // ✅ Firebase Authentication
       await _auth.signInWithEmailAndPassword(email: email, password: password);
 
-      final user = _auth.currentUser;
-      if (user == null) throw Exception("Login failed: No user");
-
-      final uid = user.uid;
-      final userDocRef = FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid);
-      final userDoc = await userDocRef.get();
-
-      if (!userDoc.exists || userDoc.data() == null) {
-        // 🔄 Create user doc if missing
-        await userDocRef.set({
-          'isAdmin': false,
-          'createdAt': FieldValue.serverTimestamp(),
-          'email': email,
-          'rollNo': rollNo,
-        });
-        debugPrint("✅ Created user document for UID: $uid");
-      }
-
-      final data = (await userDocRef.get()).data()!;
-      final isAdmin = data['isAdmin'] ?? false;
-
-      final prefs = await SharedPreferences.getInstance();
-      if (_rememberMe) {
-        await prefs.setString('savedRollNo', rollNo);
-        await prefs.setString('savedPassword', password);
-        await prefs.setBool('rememberMe', true);
-      } else {
-        await prefs.remove('savedRollNo');
-        await prefs.remove('savedPassword');
-        await prefs.setBool('rememberMe', false);
-      }
+      // ✅ Fetch user details from Firestore
+      final uid = _auth.currentUser!.uid;
+      final doc =
+          await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      final data = doc.data();
 
       if (!mounted) return;
 
-      Fluttertoast.showToast(
-        msg: "Login successful 🎉",
-        backgroundColor: Colors.green,
-      );
-
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(
-          builder: (_) => isAdmin ? const AdminDashboard() : const HomeScreen(),
-        ),
-        (_) => false,
-      );
+      if (data != null && data['isAdmin'] == true) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const AdminDashboard()),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
+        );
+      }
     } on FirebaseAuthException catch (e) {
-      _handleAuthError(e.code);
+      debugPrint("FirebaseAuthException: ${e.code}");
+      _showSnackBar(_getErrorMessage(e.code));
     } catch (e) {
-      _showSnackBar("Error: ${e.toString()}");
+      debugPrint("Login Error: $e");
+      _showSnackBar("Login failed. Please try again.");
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  void _handleAuthError(String code) {
-    String msg = switch (code) {
-      'user-not-found' => "No user found for this roll number",
-      'wrong-password' => "Incorrect password",
-      'invalid-email' => "Invalid roll number format",
-      _ => "Login failed. Please try again.",
-    };
-    _showSnackBar(msg);
+  String _getErrorMessage(String code) {
+    switch (code) {
+      case 'user-not-found':
+        return "No user found for this roll number.";
+      case 'wrong-password':
+        return "Incorrect password.";
+      case 'invalid-email':
+        return "Invalid roll number format.";
+      default:
+        return "Authentication error: $code";
+    }
   }
 
   void _showSnackBar(String message) {
-    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
     );
@@ -180,49 +131,16 @@ class _LoginPageState extends State<LoginPage> {
                       const SizedBox(height: 16),
                       TextField(
                         controller: _passwordController,
-                        obscureText: _obscurePassword,
+                        obscureText: true,
                         decoration: InputDecoration(
                           labelText: "Password",
                           prefixIcon: const Icon(Icons.lock),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscurePassword
-                                  ? Icons.visibility_off
-                                  : Icons.visibility,
-                            ),
-                            onPressed: () {
-                              setState(
-                                () => _obscurePassword = !_obscurePassword,
-                              );
-                            },
-                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
                         ),
                       ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              Checkbox(
-                                value: _rememberMe,
-                                onChanged:
-                                    (val) => setState(
-                                      () => _rememberMe = val ?? false,
-                                    ),
-                              ),
-                              const Text("Remember Me"),
-                            ],
-                          ),
-                          TextButton(
-                            onPressed: () {},
-                            child: const Text("Forgot Password?"),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 24),
                       SizedBox(
                         width: double.infinity,
                         height: 50,

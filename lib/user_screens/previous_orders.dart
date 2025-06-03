@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import '../models/cart_item.dart';
+import 'confirmed_order_page.dart';
 import 'pick_up_point.dart';
 
 class PreviousOrdersPage extends StatefulWidget {
@@ -35,10 +36,11 @@ class _PreviousOrdersPageState extends State<PreviousOrdersPage> {
                   : Icons.dark_mode,
             ),
             onPressed: () {
-              // Toggle dark/light mode
-              final current = Theme.of(context).brightness;
+              final brightness = Theme.of(context).brightness;
               final newMode =
-                  current == Brightness.dark ? ThemeMode.light : ThemeMode.dark;
+                  brightness == Brightness.dark
+                      ? ThemeMode.light
+                      : ThemeMode.dark;
               (context.findAncestorStateOfType<State<MaterialApp>>() as dynamic)
                   ?.setState(() => ThemeMode.system == newMode);
             },
@@ -51,12 +53,7 @@ class _PreviousOrdersPageState extends State<PreviousOrdersPage> {
           stream:
               FirebaseFirestore.instance
                   .collection('orders')
-                  .where(
-                    'rollNo',
-                    isEqualTo: FirebaseFirestore.instance
-                        .collection('users')
-                        .doc(userId),
-                  )
+                  .where('userId', isEqualTo: userId)
                   .orderBy('orderDate', descending: true)
                   .snapshots(),
           builder: (context, snapshot) {
@@ -200,27 +197,44 @@ class _PreviousOrdersPageState extends State<PreviousOrdersPage> {
                                     },
                                   );
                                 }).toList(),
-                                Padding(
-                                  padding: const EdgeInsets.only(bottom: 12.0),
-                                  child: ElevatedButton(
-                                    onPressed: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder:
-                                              (_) => const PickupPointPage(),
-                                        ),
-                                      );
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 30,
-                                        vertical: 12,
+
+                                const SizedBox(height: 12),
+
+                                // Re-Order Button
+                                ElevatedButton(
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => const PickupPointPage(),
                                       ),
-                                    ),
-                                    child: const Text("Re-Order"),
-                                  ),
+                                    );
+                                  },
+                                  child: const Text("Re-Order"),
                                 ),
+
+                                const SizedBox(height: 8),
+
+                                // View Order Button
+                                ElevatedButton(
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder:
+                                            (_) => OrderConfirmationPage(
+                                              orderId: orderId,
+                                            ),
+                                      ),
+                                    );
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.green,
+                                  ),
+                                  child: const Text("View Order"),
+                                ),
+
+                                const SizedBox(height: 10),
                               ],
                             );
                           },

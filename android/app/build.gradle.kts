@@ -1,9 +1,8 @@
 import java.util.Properties
-import java.io.FileInputStream
 
 plugins {
     id("com.android.application")
-    id("com.google.gms.google-services") // Firebase
+    id("com.google.gms.google-services") // Firebase plugin
     id("kotlin-android")
     id("dev.flutter.flutter-gradle-plugin")
 }
@@ -59,7 +58,16 @@ android {
     }
 }
 
-// ✅ This block must be OUTSIDE `android`
 flutter {
     source = "../.."
+}
+
+dependencies {
+    // Firebase SDKs
+    implementation("com.google.firebase:firebase-auth:22.3.0")
+    implementation("com.google.firebase:firebase-firestore:24.10.0")
+
+    // Required Kotlin & AndroidX dependencies
+    implementation("org.jetbrains.kotlin:kotlin-stdlib:1.9.22")
+    implementation("androidx.core:core-ktx:1.12.0")
 }
