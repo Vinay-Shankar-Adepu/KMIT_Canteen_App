@@ -1,17 +1,44 @@
-# kmit_canteen_clean
+# 🍴 KMIT Canteen App
 
-A new Flutter project.
+A mobile application built with Flutter for KMIT College to streamline the canteen experience for students and administrators.
 
-## Getting Started
+## 🚀 Features
 
-This project is a starting point for a Flutter application.
+### 👨‍🎓 For Students
+- 📋 View full menu with images and prices
+- ❤️ Mark favorites
+- 🛒 Add items to cart and confirm orders
+- 🔁 Reorder from previous orders
+- 📦 Track order status (Pending → Preparing → Ready → Delivered)
+- 📍 Choose a pickup point
+- 📱 Receive a QR confirmation code for pickup
 
-A few resources to get you started if this is your first Flutter project:
+### 🛠️ For Admin
+- 🧾 Admin dashboard to view and filter all active orders
+- 🚦 Change order status in real-time
+- 📷 Scan student QR codes to confirm delivery
+- 📊 See order counts, prices, and live updates
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## 📦 Tech Stack
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
-"# kmit-canteen" 
+- **Flutter** for UI
+- **Firebase Firestore** for real-time data storage
+- **Firebase Auth** for authentication
+- **Hive** for local storage
+- **Razorpay** (Test mode) for payments
+- **mobile_scanner** for QR code scanning
+
+## 📲 Getting Started
+
+### Prerequisites
+
+- Flutter SDK (>= 3.0.0)
+- Firebase CLI (if using Firebase Hosting or Emulator)
+
+### Clone and Run
+
+```bash
+git clone https://github.com/yourusername/kmit-canteen.git
+cd kmit-canteen
+flutter pub get
+flutter run
