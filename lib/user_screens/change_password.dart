@@ -14,9 +14,12 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
   final TextEditingController newPasswordController = TextEditingController();
   final TextEditingController confirmPasswordController =
       TextEditingController();
-
   final FirebaseAuth _auth = FirebaseAuth.instance;
+
   bool isLoading = false;
+  bool showCurrent = false;
+  bool showNew = false;
+  bool showConfirm = false;
 
   @override
   void dispose() {
@@ -64,7 +67,6 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
         password: current,
       );
       await user.reauthenticateWithCredential(credential);
-
       await user.updatePassword(newPass);
 
       _showMessage("Password updated successfully", success: true);
@@ -97,7 +99,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
       appBar: AppBar(
         title: const Text("KMIT CANTEEN"),
         centerTitle: true,
-        leading: BackButton(onPressed: () => Navigator.pop(context)),
+        leading: const BackButton(),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -114,10 +116,16 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
             const SizedBox(height: 5),
             TextField(
               controller: currentPasswordController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
+              obscureText: !showCurrent,
+              decoration: InputDecoration(
+                border: const OutlineInputBorder(),
                 hintText: "Enter current password",
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    showCurrent ? Icons.visibility : Icons.visibility_off,
+                  ),
+                  onPressed: () => setState(() => showCurrent = !showCurrent),
+                ),
               ),
             ),
             const SizedBox(height: 20),
@@ -126,10 +134,14 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
             const SizedBox(height: 5),
             TextField(
               controller: newPasswordController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
+              obscureText: !showNew,
+              decoration: InputDecoration(
+                border: const OutlineInputBorder(),
                 hintText: "Enter new password",
+                suffixIcon: IconButton(
+                  icon: Icon(showNew ? Icons.visibility : Icons.visibility_off),
+                  onPressed: () => setState(() => showNew = !showNew),
+                ),
               ),
             ),
             const SizedBox(height: 20),
@@ -138,38 +150,45 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
             const SizedBox(height: 5),
             TextField(
               controller: confirmPasswordController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
+              obscureText: !showConfirm,
+              decoration: InputDecoration(
+                border: const OutlineInputBorder(),
                 hintText: "Re-enter new password",
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    showConfirm ? Icons.visibility : Icons.visibility_off,
+                  ),
+                  onPressed: () => setState(() => showConfirm = !showConfirm),
+                ),
               ),
             ),
+
             const SizedBox(height: 10),
 
-            const Padding(
-              padding: EdgeInsets.only(left: 8.0),
+            Padding(
+              padding: const EdgeInsets.only(left: 8.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     "• Must contain at least 8 characters",
-                    style: TextStyle(color: Colors.grey),
+                    style: TextStyle(color: Theme.of(context).hintColor),
                   ),
                   Text(
                     "• Must include a number (0-9)",
-                    style: TextStyle(color: Colors.grey),
+                    style: TextStyle(color: Theme.of(context).hintColor),
                   ),
                   Text(
                     "• Must include a lowercase letter (a-z)",
-                    style: TextStyle(color: Colors.grey),
+                    style: TextStyle(color: Theme.of(context).hintColor),
                   ),
                   Text(
                     "• Must include an uppercase letter (A-Z)",
-                    style: TextStyle(color: Colors.grey),
+                    style: TextStyle(color: Theme.of(context).hintColor),
                   ),
                   Text(
                     "• Must include a special character (!@#\$%^&*)",
-                    style: TextStyle(color: Colors.grey),
+                    style: TextStyle(color: Theme.of(context).hintColor),
                   ),
                 ],
               ),
@@ -180,7 +199,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
             SizedBox(
               width: double.infinity,
               height: 50,
-              child: ElevatedButton(
+              child: FilledButton(
                 onPressed: isLoading ? null : handleChangePassword,
                 child:
                     isLoading

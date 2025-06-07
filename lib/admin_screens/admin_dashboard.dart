@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../widgets/admin_sidebar.dart';
-import '../main.dart'; // to access themeNotifier
+import '../main.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -13,7 +13,6 @@ class AdminDashboard extends StatefulWidget {
 class _AdminDashboardState extends State<AdminDashboard> {
   String selectedStatus = 'All';
   String searchQuery = '';
-
   final List<String> statusFilters = [
     'All',
     'Pending',
@@ -21,75 +20,92 @@ class _AdminDashboardState extends State<AdminDashboard> {
     'Ready',
     'Delivered',
   ];
+  Set<String> selectedOrderIds = {};
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       drawer: const ASidebar(),
-      appBar: AppBar(
-        title: const Text('KMIT CANTEEN'),
-        centerTitle: true,
-        actions: [
-          ValueListenableBuilder<ThemeMode>(
-            valueListenable: themeNotifier,
-            builder: (context, mode, _) {
-              return IconButton(
-                icon: Icon(
-                  mode == ThemeMode.dark ? Icons.dark_mode : Icons.light_mode,
-                ),
-                onPressed: () {
-                  themeNotifier.value =
-                      mode == ThemeMode.light
-                          ? ThemeMode.dark
-                          : ThemeMode.light;
-                },
-              );
-            },
-          ),
-        ],
+      appBar: AppBar(title: const Text('KMIT CANTEEN'), centerTitle: true),
+      floatingActionButton:
+          selectedOrderIds.isNotEmpty
+              ? FloatingActionButton.extended(
+                icon: const Icon(Icons.batch_prediction),
+                label: const Text("Bulk Update"),
+                onPressed: () => _showBulkStatusDialog(context),
+              )
+              : FloatingActionButton(
+                onPressed: () => Navigator.pushNamed(context, '/scanner'),
+                child: const Icon(Icons.qr_code_scanner),
+              ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      bottomNavigationBar: const BottomAppBar(
+        shape: CircularNotchedRectangle(),
+        notchMargin: 6,
+        child: SizedBox(height: 60),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            const Text(
-              "Admin Dashboard",
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            Row(
+      body: StreamBuilder<DocumentSnapshot>(
+        stream:
+            FirebaseFirestore.instance
+                .collection('canteenStatus')
+                .doc('status')
+                .snapshots(),
+        builder: (context, statusSnapshot) {
+          bool isOnline = true;
+          if (statusSnapshot.hasData) {
+            isOnline = statusSnapshot.data?.get('isOnline') ?? true;
+          }
+
+          return Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
               children: [
-                Expanded(
-                  child: TextField(
-                    decoration: const InputDecoration(
-                      hintText: 'Search by Order ID',
-                      prefixIcon: Icon(Icons.search),
-                      border: OutlineInputBorder(),
+                if (!isOnline)
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    margin: const EdgeInsets.only(bottom: 12),
+                    color: Colors.red.shade700,
+                    child: const Text(
+                      "⚠️ The Canteen is currently OFFLINE",
+                      style: TextStyle(color: Colors.white),
+                      textAlign: TextAlign.center,
                     ),
-                    onChanged:
-                        (val) => setState(() => searchQuery = val.trim()),
                   ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        decoration: const InputDecoration(
+                          hintText: 'Search by Order ID',
+                          prefixIcon: Icon(Icons.search),
+                          border: OutlineInputBorder(),
+                        ),
+                        onChanged:
+                            (val) => setState(() => searchQuery = val.trim()),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    DropdownButton<String>(
+                      value: selectedStatus,
+                      items:
+                          statusFilters
+                              .map(
+                                (status) => DropdownMenuItem(
+                                  value: status,
+                                  child: Text(status),
+                                ),
+                              )
+                              .toList(),
+                      onChanged: (val) => setState(() => selectedStatus = val!),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 12),
-                DropdownButton<String>(
-                  value: selectedStatus,
-                  items:
-                      statusFilters
-                          .map(
-                            (status) => DropdownMenuItem(
-                              value: status,
-                              child: Text(status),
-                            ),
-                          )
-                          .toList(),
-                  onChanged: (val) => setState(() => selectedStatus = val!),
-                ),
+                const SizedBox(height: 12),
+                Expanded(child: _buildOrderList()),
               ],
             ),
-            const SizedBox(height: 12),
-            Expanded(child: _buildOrderList()),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -102,12 +118,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
               .orderBy('orderDate', descending: true)
               .snapshots(),
       builder: (context, snapshot) {
-        if (snapshot.hasError) {
-          return const Center(child: Text("Error loading orders"));
-        }
-        if (!snapshot.hasData) {
+        if (!snapshot.hasData)
           return const Center(child: CircularProgressIndicator());
-        }
 
         final rawOrders = snapshot.data!.docs;
 
@@ -121,16 +133,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
               return status != 'Delivered' && matchesStatus && matchesSearch;
             }).toList();
 
-        final statusPriority = {'Pending': 0, 'Preparing': 1, 'Ready': 2};
-        filteredOrders.sort((a, b) {
-          final sa = a['status'] ?? '';
-          final sb = b['status'] ?? '';
-          return (statusPriority[sa] ?? 99).compareTo(statusPriority[sb] ?? 99);
-        });
-
-        if (filteredOrders.isEmpty) {
+        if (filteredOrders.isEmpty)
           return const Center(child: Text("No active orders."));
-        }
 
         return ListView.builder(
           itemCount: filteredOrders.length,
@@ -151,11 +155,21 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 }
 
                 return OrderCard(
-                  orderNo: doc['orderId'] ?? 'N/A',
-                  location: doc['pickupPoint'] ?? 'Unknown',
-                  status: doc['status'] ?? 'Pending',
+                  orderNo: doc['orderId'],
+                  location: doc['pickupPoint'],
+                  status: doc['status'],
                   itemCount: itemCount,
-                  description: 'Price: ₹${doc['totalPrice'] ?? 0}',
+                  description: 'Price: ₹${doc['totalPrice']}',
+                  isSelected: selectedOrderIds.contains(doc.id),
+                  onSelected: (selected) {
+                    setState(() {
+                      if (selected) {
+                        selectedOrderIds.add(doc.id);
+                      } else {
+                        selectedOrderIds.remove(doc.id);
+                      }
+                    });
+                  },
                   onStatusChange: (newStatus) {
                     FirebaseFirestore.instance
                         .collection('orders')
@@ -170,6 +184,49 @@ class _AdminDashboardState extends State<AdminDashboard> {
       },
     );
   }
+
+  void _showBulkStatusDialog(BuildContext context) {
+    String selected = 'Preparing';
+    showDialog(
+      context: context,
+      builder:
+          (_) => AlertDialog(
+            title: const Text('Bulk Status Update'),
+            content: DropdownButton<String>(
+              value: selected,
+              items:
+                  ['Pending', 'Preparing', 'Ready', 'Delivered']
+                      .map(
+                        (status) => DropdownMenuItem(
+                          value: status,
+                          child: Text(status),
+                        ),
+                      )
+                      .toList(),
+              onChanged: (val) => setState(() => selected = val ?? selected),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  for (var orderId in selectedOrderIds) {
+                    await FirebaseFirestore.instance
+                        .collection('orders')
+                        .doc(orderId)
+                        .update({'status': selected});
+                  }
+                  setState(() => selectedOrderIds.clear());
+                  Navigator.pop(context);
+                },
+                child: const Text('Update'),
+              ),
+            ],
+          ),
+    );
+  }
 }
 
 class OrderCard extends StatelessWidget {
@@ -179,6 +236,8 @@ class OrderCard extends StatelessWidget {
   final int itemCount;
   final String description;
   final Function(String) onStatusChange;
+  final bool isSelected;
+  final Function(bool) onSelected;
 
   const OrderCard({
     super.key,
@@ -188,6 +247,8 @@ class OrderCard extends StatelessWidget {
     required this.itemCount,
     required this.description,
     required this.onStatusChange,
+    required this.isSelected,
+    required this.onSelected,
   });
 
   @override
@@ -207,40 +268,45 @@ class OrderCard extends StatelessWidget {
     }
 
     return Card(
-      elevation: 4,
-      margin: const EdgeInsets.symmetric(vertical: 8),
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.fastfood),
-              title: Text('Order #$orderNo - $location'),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Items: $itemCount'),
-                  Text(description),
-                  const SizedBox(height: 8),
-                  Chip(
-                    label: Text(status),
-                    backgroundColor: _getStatusColor(status),
-                    labelStyle: const TextStyle(color: Colors.white),
-                  ),
-                ],
-              ),
-              trailing:
-                  nextStatus != null
-                      ? ElevatedButton(
-                        onPressed: () => onStatusChange(nextStatus!),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue,
+            Row(
+              children: [
+                Checkbox(
+                  value: isSelected,
+                  onChanged: (val) => onSelected(val ?? false),
+                ),
+                Expanded(
+                  child: ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.fastfood),
+                    title: Text('Order #$orderNo - $location'),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Items: $itemCount'),
+                        Text(description),
+                        const SizedBox(height: 8),
+                        Chip(
+                          label: Text(status),
+                          backgroundColor: _getStatusColor(status),
+                          labelStyle: const TextStyle(color: Colors.white),
                         ),
-                        child: Text(buttonLabel),
-                      )
-                      : null,
+                      ],
+                    ),
+                    trailing:
+                        nextStatus != null
+                            ? ElevatedButton(
+                              onPressed: () => onStatusChange(nextStatus!),
+                              child: Text(buttonLabel),
+                            )
+                            : null,
+                  ),
+                ),
+              ],
             ),
           ],
         ),

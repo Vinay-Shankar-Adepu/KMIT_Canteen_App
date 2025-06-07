@@ -2,8 +2,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:provider/provider.dart';
+
 import '../models/cart_item.dart';
-import 'item_card.dart';
+import '../widgets/item_card.dart';
+import '../providers/canteen_status_provider.dart';
 
 class MenuItemList extends StatelessWidget {
   final String searchQuery;
@@ -20,24 +23,32 @@ class MenuItemList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
+    final isOnline = context.watch<CanteenStatusProvider>().isOnline;
+
     if (user == null) {
-      return const Center(child: Text("User not logged in"));
+      return Center(
+        child: Text(
+          "User not logged in",
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
+      );
     }
 
+    final rollNo = user.email!.split('@').first;
     final cartBox = Hive.box<CartItem>('cart');
 
     return StreamBuilder<DocumentSnapshot>(
       stream:
           FirebaseFirestore.instance
               .collection('users')
-              .doc(user.uid)
+              .doc(rollNo)
               .snapshots(),
       builder: (context, favSnapshot) {
-        if (!favSnapshot.hasData) {
+        if (!favSnapshot.hasData || !favSnapshot.data!.exists) {
           return const Center(child: CircularProgressIndicator());
         }
 
-        final favData = favSnapshot.data?.data() as Map<String, dynamic>? ?? {};
+        final favData = favSnapshot.data!.data() as Map<String, dynamic>? ?? {};
         final favRefs =
             (favData['favorites'] as List<dynamic>? ?? [])
                 .whereType<DocumentReference>()
@@ -52,8 +63,10 @@ class MenuItemList extends StatelessWidget {
               return const Center(child: CircularProgressIndicator());
             }
 
+            final docs = snapshot.data!.docs;
+
             final filtered =
-                snapshot.data!.docs.where((doc) {
+                docs.where((doc) {
                   final data = doc.data() as Map<String, dynamic>;
                   if ((data['isSpecial'] ?? false) == true) return false;
 
@@ -80,16 +93,25 @@ class MenuItemList extends StatelessWidget {
               });
             }
 
-            if (filtered.isEmpty) return const Text("No items found.");
+            if (filtered.isEmpty) {
+              return Center(
+                child: Text(
+                  "No items found.",
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              );
+            }
 
             return ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
+              padding: const EdgeInsets.only(bottom: 16),
               itemCount: filtered.length,
               itemBuilder: (context, index) {
                 final itemRef = filtered[index];
                 final data = itemRef.data() as Map<String, dynamic>;
                 final itemId = itemRef.id;
+
                 final isOutOfStock = data['availability'] == false;
                 final isFav = favRefs.contains(itemId);
                 final currentCartItem = cartBox.get(itemId);
@@ -104,13 +126,14 @@ class MenuItemList extends StatelessWidget {
                   availability: !isOutOfStock,
                   showQuantityControl: isInCart,
                   isFavorite: isFav,
+                  isCanteenOnline: isOnline,
                   onFavoriteToggle: () async {
                     final favRef = FirebaseFirestore.instance
                         .collection('menuItems')
                         .doc(itemId);
                     final userDoc = FirebaseFirestore.instance
                         .collection('users')
-                        .doc(user.uid);
+                        .doc(rollNo);
 
                     await userDoc.set({
                       'favorites':

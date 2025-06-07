@@ -1,9 +1,18 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import '../main.dart'; // to access themeNotifier and saveThemePreference
 
-class Sidebar extends StatelessWidget {
+class Sidebar extends StatefulWidget {
   const Sidebar({super.key});
+
+  @override
+  State<Sidebar> createState() => _SidebarState();
+}
+
+class _SidebarState extends State<Sidebar> {
+  String? modeLabel;
+  double labelOpacity = 0.0;
 
   Future<Map<String, dynamic>?> _getUserData() async {
     final user = FirebaseAuth.instance.currentUser;
@@ -18,6 +27,54 @@ class Sidebar extends StatelessWidget {
             .doc(rollNumber)
             .get();
     return doc.data();
+  }
+
+  void _toggleTheme(BuildContext context) async {
+    final isCurrentlyDark = themeNotifier.value == ThemeMode.dark;
+    final newTheme = isCurrentlyDark ? ThemeMode.light : ThemeMode.dark;
+
+    themeNotifier.value = newTheme;
+    await saveThemePreference(newTheme == ThemeMode.dark);
+    _showThemeLabel(
+      context,
+      newTheme == ThemeMode.dark ? "Dark Mode" : "Light Mode",
+    );
+  }
+
+  void _showThemeLabel(BuildContext context, String message) {
+    final overlay = Overlay.of(context);
+    final overlayEntry = OverlayEntry(
+      builder:
+          (context) => Center(
+            child: AnimatedOpacity(
+              opacity: 1,
+              duration: const Duration(milliseconds: 500),
+              curve: Curves.easeInOut,
+              child: Material(
+                color: Colors.transparent,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.8),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    message,
+                    style: const TextStyle(color: Colors.white, fontSize: 16),
+                  ),
+                ),
+              ),
+            ),
+          ),
+    );
+
+    overlay.insert(overlayEntry);
+    Future.delayed(const Duration(seconds: 1), () {
+      overlayEntry.remove();
+    });
   }
 
   @override
@@ -88,6 +145,23 @@ class Sidebar extends StatelessWidget {
                     ],
                   ),
                 ),
+
+                ListTile(
+                  leading: Icon(
+                    themeNotifier.value == ThemeMode.dark
+                        ? Icons.dark_mode
+                        : Icons.light_mode,
+                  ),
+                  title: const Text(
+                    "Dark Mode",
+                    style: TextStyle(fontWeight: FontWeight.w400),
+                  ),
+                  trailing: Switch(
+                    value: themeNotifier.value == ThemeMode.dark,
+                    onChanged: (_) => _toggleTheme(context),
+                  ),
+                ),
+
                 ListTile(
                   leading: const Icon(Icons.favorite),
                   title: const Text("Favourites"),

@@ -3,7 +3,7 @@ import java.util.Properties
 plugins {
     id("com.android.application")
     id("com.google.gms.google-services") // Firebase plugin
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")   // ✅ Use correct Kotlin plugin ID
     id("dev.flutter.flutter-gradle-plugin")
 }
 
@@ -30,8 +30,8 @@ android {
 
     defaultConfig {
         applicationId = "com.example.kmit_canteen_clean"
-        minSdk = 21
-        targetSdk = 35
+        minSdk = 23                       // ✅ Required for firebase_auth compatibility
+        targetSdk = 34
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }

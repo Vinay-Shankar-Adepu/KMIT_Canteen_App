@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 class AnalyticsPage extends StatelessWidget {
@@ -6,86 +7,158 @@ class AnalyticsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark ? Colors.white : Colors.black;
-    final cardColor =
-        isDark
-            ? const Color.fromARGB(255, 40, 40, 40)
-            : const Color.fromARGB(255, 245, 245, 245);
+    final cardColor = isDark ? Colors.grey[900]! : Colors.white;
+    final textColor = isDark ? Colors.white : Colors.black87;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Analytics'),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode),
-            onPressed: () {
-              // Theme toggle logic if using ValueNotifier<ThemeMode>
-              // themeNotifier.value = themeNotifier.value == ThemeMode.dark
-              //     ? ThemeMode.light
-              //     : ThemeMode.dark;
+      appBar: AppBar(title: const Text('Analytics'), centerTitle: true),
+      body: StreamBuilder<QuerySnapshot>(
+        stream:
+            FirebaseFirestore.instance
+                .collection('orders')
+                .where(
+                  'orderDate',
+                  isGreaterThanOrEqualTo: Timestamp.fromDate(
+                    DateTime(
+                      DateTime.now().year,
+                      DateTime.now().month,
+                      DateTime.now().day,
+                    ),
+                  ),
+                )
+                .snapshots(),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          final ordersSnapshot = snapshot.data!;
+          int todayOrders = ordersSnapshot.docs.length;
+          double totalIncome = 0.0;
+          Map<String, int> pickupSales = {'Block - B': 0, 'Canteen': 0};
+
+          for (var order in ordersSnapshot.docs) {
+            final data = order.data() as Map<String, dynamic>;
+            totalIncome += (data['totalPrice'] ?? 0).toDouble();
+
+            String pickup = data['pickupPoint'] ?? '';
+            if (pickupSales.containsKey(pickup)) {
+              pickupSales[pickup] = pickupSales[pickup]! + 1;
+            }
+          }
+
+          return FutureBuilder<Map<String, int>>(
+            future: _getTopItems(ordersSnapshot.docs),
+            builder: (context, itemSnapshot) {
+              if (!itemSnapshot.hasData) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              final sortedItems =
+                  itemSnapshot.data!.entries.toList()
+                    ..sort((a, b) => b.value.compareTo(a.value));
+              final topItems = sortedItems.take(4).map((e) => e.key).toList();
+
+              return SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _sectionTitle("Overview", textColor),
+                    Row(
+                      children: [
+                        _infoCard(
+                          "Today's Orders",
+                          "$todayOrders",
+                          cardColor,
+                          textColor,
+                        ),
+                        const SizedBox(width: 16),
+                        _infoCard(
+                          "Income",
+                          "₹${totalIncome.toInt()}",
+                          cardColor,
+                          textColor,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    _sectionCard(
+                      title: "Most Ordered Items",
+                      cardColor: cardColor,
+                      textColor: textColor,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children:
+                            topItems.map((item) => Text("• $item")).toList(),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    _sectionCard(
+                      title: "Top Pick-up Point",
+                      cardColor: cardColor,
+                      textColor: textColor,
+                      child: Text(
+                        pickupSales.entries
+                            .reduce((a, b) => a.value > b.value ? a : b)
+                            .key,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      children: [
+                        _infoCard(
+                          "B-Block Sales",
+                          "${pickupSales['Block - B']}",
+                          cardColor,
+                          textColor,
+                        ),
+                        const SizedBox(width: 16),
+                        _infoCard(
+                          "Canteen Sales",
+                          "${pickupSales['Canteen']}",
+                          cardColor,
+                          textColor,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              );
             },
-          ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _sectionTitle("Overview", textColor),
-            Row(
-              children: [
-                _infoCard("Today's Orders", "50", cardColor, textColor),
-                const SizedBox(width: 16),
-                _infoCard("Income", "₹5,000", cardColor, textColor),
-              ],
-            ),
-            const SizedBox(height: 20),
-
-            _sectionCard(
-              title: "Most Ordered Items",
-              cardColor: cardColor,
-              textColor: textColor,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Text("• Veg Biryani"),
-                  Text("• Chicken Wrap"),
-                  Text("• Samosa"),
-                  Text("• Idli Vada"),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 20),
-            _sectionCard(
-              title: "Top Pick-up Point",
-              cardColor: cardColor,
-              textColor: textColor,
-              child: const Text("• B Block"),
-            ),
-
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                _infoCard("B-Block Sales", "50", cardColor, textColor),
-                const SizedBox(width: 16),
-                _infoCard("Canteen Sales", "40", cardColor, textColor),
-              ],
-            ),
-
-            const SizedBox(height: 20),
-            _sectionCard(
-              title: "Out-of-Stock Items",
-              cardColor: cardColor,
-              textColor: textColor,
-              child: const Text("• Lemon Rice"),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
+  }
+
+  Future<Map<String, int>> _getTopItems(
+    List<QueryDocumentSnapshot> orders,
+  ) async {
+    Map<String, int> itemCounts = {};
+    for (var order in orders) {
+      final orderItemsSnap =
+          await FirebaseFirestore.instance
+              .collection('orders')
+              .doc(order.id)
+              .collection('orderItems')
+              .get();
+
+      for (var item in orderItemsSnap.docs) {
+        final itemData = item.data() as Map<String, dynamic>;
+        final ref = itemData['itemId'] as DocumentReference;
+        final quantity = itemData['quantity'] ?? 0;
+
+        final itemDoc = await ref.get();
+        if (!itemDoc.exists) continue;
+
+        final name = (itemDoc.data()! as Map<String, dynamic>)['name'];
+        if (name != null) {
+          itemCounts[name] = (itemCounts[name] ?? 0) + (quantity as int);
+        }
+      }
+    }
+    return itemCounts;
   }
 
   Widget _infoCard(String title, String value, Color bgColor, Color textColor) {
