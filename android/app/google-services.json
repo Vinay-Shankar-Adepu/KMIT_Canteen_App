@@ -7,6 +7,25 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:919773132515:android:a438622ef88e2bcbcb37d6",
+        "android_client_info": {
+          "package_name": "com.campus.canteen"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCtfVtjbbRWOjd0TmcMEPyGF4GcbH-l5X4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:919773132515:android:bb60be08c2954a95cb37d6",
         "android_client_info": {
           "package_name": "com.example.kmit_canteen"

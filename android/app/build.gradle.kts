@@ -3,7 +3,7 @@ import java.util.Properties
 plugins {
     id("com.android.application")
     id("com.google.gms.google-services") // Firebase plugin
-    id("org.jetbrains.kotlin.android")   // ✅ Use correct Kotlin plugin ID
+    id("org.jetbrains.kotlin.android")
     id("dev.flutter.flutter-gradle-plugin")
 }
 
@@ -15,7 +15,7 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "com.example.kmit_canteen_clean"
+    namespace = "com.campus.canteen" // ✅ Updated namespace
     compileSdk = 35
     ndkVersion = "27.0.12077973"
 
@@ -29,8 +29,8 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.kmit_canteen_clean"
-        minSdk = 23                       // ✅ Required for firebase_auth compatibility
+        applicationId = "com.campus.canteen" // ✅ Updated Play Store ID
+        minSdk = 23
         targetSdk = 34
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -67,7 +67,7 @@ dependencies {
     implementation("com.google.firebase:firebase-auth:22.3.0")
     implementation("com.google.firebase:firebase-firestore:24.10.0")
 
-    // Required Kotlin & AndroidX dependencies
+    // Kotlin & AndroidX
     implementation("org.jetbrains.kotlin:kotlin-stdlib:1.9.22")
     implementation("androidx.core:core-ktx:1.12.0")
 }

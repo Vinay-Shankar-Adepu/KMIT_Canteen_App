@@ -193,7 +193,8 @@ class _OrderConfirmationPageState extends State<OrderConfirmationPage>
                               orderId,
                               style: Theme.of(
                                 context,
-                              ).textTheme.titleMedium!.copyWith(
+                              ).textTheme.headlineSmall!.copyWith(
+                                fontWeight: FontWeight.bold,
                                 color: Theme.of(context).colorScheme.primary,
                               ),
                             ),
@@ -201,17 +202,50 @@ class _OrderConfirmationPageState extends State<OrderConfirmationPage>
                         ),
                       ),
                       const SizedBox(height: 16),
-                      Text(
-                        "Pickup Point: $pickup",
-                        style: Theme.of(context).textTheme.bodyLarge,
-                      ),
-                      const SizedBox(height: 10),
+
+                      // ✅ Pickup Point with Icon
                       Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Text(
-                            "Current Status: ",
-                            style: Theme.of(context).textTheme.bodyLarge,
+                          const Icon(
+                            Icons.location_on,
+                            color: Colors.red,
+                            size: 20,
                           ),
+                          const SizedBox(width: 6),
+                          Text(
+                            "Pickup Point: ",
+                            style: Theme.of(context).textTheme.bodyLarge
+                                ?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                          Expanded(
+                            child: Text(
+                              pickup,
+                              style: Theme.of(context).textTheme.bodyLarge,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      // ✅ Status with Icon
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            Icons.info_outline,
+                            color: Colors.grey,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            "Current Status:",
+                            style: Theme.of(context).textTheme.bodyLarge
+                                ?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(width: 8),
                           Chip(
                             label: Text(status),
                             backgroundColor:
@@ -220,7 +254,9 @@ class _OrderConfirmationPageState extends State<OrderConfirmationPage>
                           ),
                         ],
                       ),
-                      const SizedBox(height: 20),
+
+                      const SizedBox(height: 24),
+
                       Text(
                         "Scan this at pickup:",
                         style: Theme.of(context).textTheme.bodyLarge!.copyWith(
@@ -232,6 +268,8 @@ class _OrderConfirmationPageState extends State<OrderConfirmationPage>
                   ),
                 ),
               ),
+
+              // ✅ QR & Tick Animation
               SlideTransition(
                 position: qrSlideAnimation,
                 child: Stack(
@@ -271,6 +309,8 @@ class _OrderConfirmationPageState extends State<OrderConfirmationPage>
                   ],
                 ),
               ),
+
+              // ✅ Typing Message Animation
               SlideTransition(
                 position: messageSlideAnimation,
                 child: Visibility(

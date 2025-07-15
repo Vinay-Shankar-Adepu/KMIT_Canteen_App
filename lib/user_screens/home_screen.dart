@@ -77,7 +77,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
     final rollNumber = user?.email?.split('@').first ?? "";
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       key: _scaffoldKey,
@@ -116,6 +115,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ),
           ),
           const SizedBox(height: 10),
+
+          /// Reorder Section
           FutureBuilder<QuerySnapshot>(
             future:
                 FirebaseFirestore.instance
@@ -143,35 +144,76 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               );
             },
           ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                "Menu:",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              PopupMenuButton<String>(
-                icon: const Icon(Icons.filter_alt),
-                onSelected: (value) => setState(() => _selectedFilter = value),
-                itemBuilder:
-                    (context) => const [
-                      PopupMenuItem(value: '', child: Text('All')),
-                      PopupMenuItem(
-                        value: 'Most Ordered',
-                        child: Text('Most Ordered'),
+
+          /// Menu with inline offline status
+          StreamBuilder<DocumentSnapshot>(
+            stream:
+                FirebaseFirestore.instance
+                    .collection('canteenStatus')
+                    .doc('status')
+                    .snapshots(),
+            builder: (context, snapshot) {
+              final data = snapshot.data?.data() as Map<String, dynamic>?;
+              final isOnline = data?['isOnline'] ?? true;
+
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      const Text(
+                        "Menu:",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                      PopupMenuItem(value: 'Indian', child: Text('Indian')),
-                      PopupMenuItem(value: 'Chinese', child: Text('Chinese')),
-                      PopupMenuItem(
-                        value: 'Beverages',
-                        child: Text('Beverages'),
-                      ),
-                      PopupMenuItem(value: 'Snacks', child: Text('Snacks')),
+                      if (!isOnline) ...[
+                        const SizedBox(width: 8),
+                        const Icon(Icons.circle, color: Colors.red, size: 10),
+                        const SizedBox(width: 6),
+                        const Text(
+                          "Canteen Offline",
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.red,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ],
                     ],
-              ),
-            ],
+                  ),
+                  PopupMenuButton<String>(
+                    icon: const Icon(Icons.filter_alt),
+                    onSelected:
+                        (value) => setState(() => _selectedFilter = value),
+                    itemBuilder:
+                        (context) => const [
+                          PopupMenuItem(value: '', child: Text('All')),
+                          PopupMenuItem(
+                            value: 'Most Ordered',
+                            child: Text('Most Ordered'),
+                          ),
+                          PopupMenuItem(value: 'Indian', child: Text('Indian')),
+                          PopupMenuItem(
+                            value: 'Chinese',
+                            child: Text('Chinese'),
+                          ),
+                          PopupMenuItem(
+                            value: 'Beverages',
+                            child: Text('Beverages'),
+                          ),
+                          PopupMenuItem(value: 'Snacks', child: Text('Snacks')),
+                        ],
+                  ),
+                ],
+              );
+            },
           ),
           const SizedBox(height: 10),
+
+          /// Menu Item List
           MenuItemList(
             searchQuery: _searchQuery,
             onAddToCart: _addToCart,
@@ -179,6 +221,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ),
         ],
       ),
+
+      /// Bottom Cart or NavBar
       bottomNavigationBar: ValueListenableBuilder(
         valueListenable: _cartBox.listenable(),
         builder: (context, Box<CartItem> box, _) {

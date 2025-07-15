@@ -164,6 +164,12 @@ class _ASidebarState extends State<ASidebar> {
                       title: const Text("View All Orders"),
                       onTap: () => Navigator.pushNamed(context, '/allOrders'),
                     ),
+                    ListTile(
+                      leading: const Icon(Icons.location_pin),
+                      title: const Text("Pickup Point Control"),
+                      onTap:
+                          () => Navigator.pushNamed(context, '/pickupControl'),
+                    ),
 
                     ListTile(
                       leading: Icon(

@@ -106,8 +106,8 @@ class _OrderVerificationPageState extends State<OrderVerificationPage> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardColor = isDark ? Colors.grey[900]! : Colors.white;
     final textColor = isDark ? Colors.white : Colors.black87;
+    final labelStyle = TextStyle(fontWeight: FontWeight.bold, color: textColor);
 
     final orderRef = FirebaseFirestore.instance
         .collection('orders')
@@ -128,12 +128,30 @@ class _OrderVerificationPageState extends State<OrderVerificationPage> {
               final status = order['status'];
               final pickup = order['pickupPoint'];
               final total = order['totalPrice'];
-              final roll = order['userId'];
+
+              String? userId;
+              if (order['userId'] is DocumentReference) {
+                userId = (order['userId'] as DocumentReference).id;
+              } else if (order['userId'] is String) {
+                userId = order['userId'];
+              }
+              if (userId == null) {
+                return const Center(child: Text("User ID not found."));
+              }
 
               final userRef = FirebaseFirestore.instance
                   .collection('users')
-                  .doc(roll);
+                  .doc(userId);
               final itemsRef = orderRef.collection('orderItems');
+
+              if (status == 'Delivered') {
+                return const Center(
+                  child: Text(
+                    "✅ This order has already been delivered.",
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                  ),
+                );
+              }
 
               return FutureBuilder<DocumentSnapshot>(
                 future: userRef.get(),
@@ -141,56 +159,76 @@ class _OrderVerificationPageState extends State<OrderVerificationPage> {
                   final userData =
                       userSnap.data?.data() as Map<String, dynamic>? ?? {};
                   final name = userData['name'] ?? 'Unknown';
+                  final rollNo = userRef.id;
 
                   return Padding(
                     padding: const EdgeInsets.all(20),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          "Order ID: ${widget.orderId}",
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: textColor,
-                          ),
+                        Row(
+                          children: [
+                            const Icon(Icons.receipt_long, color: Colors.blue),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                "Order ID: ${widget.orderId}",
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                  color: textColor,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 10),
-                        Text("Name: $name", style: TextStyle(color: textColor)),
-                        Text(
-                          "Roll Number: $roll",
-                          style: TextStyle(color: textColor),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            const Icon(Icons.person, size: 20),
+                            const SizedBox(width: 8),
+                            Text("Name: ", style: labelStyle),
+                            Text(name, style: TextStyle(color: textColor)),
+                          ],
                         ),
-                        Text(
-                          "Pickup Point: $pickup",
-                          style: TextStyle(color: textColor),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            const Icon(Icons.badge, size: 20),
+                            const SizedBox(width: 8),
+                            Text("Roll Number: ", style: labelStyle),
+                            Text(rollNo, style: TextStyle(color: textColor)),
+                          ],
                         ),
-                        Text(
-                          "Total: ₹$total",
-                          style: TextStyle(color: textColor),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            const Icon(Icons.location_on, color: Colors.red),
+                            const SizedBox(width: 8),
+                            Text("Pickup Point: ", style: labelStyle),
+                            Text(pickup, style: TextStyle(color: textColor)),
+                          ],
                         ),
-                        Text(
-                          "Status: ${isDelivered ? 'Delivered' : status}",
-                          style: TextStyle(
-                            color: isDelivered ? Colors.green : textColor,
-                            fontWeight: FontWeight.w500,
-                          ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            const Icon(Icons.payments, color: Colors.green),
+                            const SizedBox(width: 8),
+                            Text("Total: ", style: labelStyle),
+                            Text("₹$total", style: TextStyle(color: textColor)),
+                          ],
                         ),
-                        const SizedBox(height: 16),
-                        Text(
-                          "Items Ordered:",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: textColor,
-                          ),
-                        ),
+                        const SizedBox(height: 20),
+                        Text("🧾 Items Ordered:", style: labelStyle),
                         const SizedBox(height: 8),
                         Expanded(
                           child: StreamBuilder<QuerySnapshot>(
                             stream: itemsRef.snapshots(),
                             builder: (context, itemsSnap) {
                               if (!itemsSnap.hasData) {
-                                return const CircularProgressIndicator();
+                                return const Center(
+                                  child: CircularProgressIndicator(),
+                                );
                               }
                               final items = itemsSnap.data!.docs;
 
@@ -217,17 +255,23 @@ class _OrderVerificationPageState extends State<OrderVerificationPage> {
                                       return ListTile(
                                         title: Text(
                                           name,
-                                          style: TextStyle(color: textColor),
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            color: textColor,
+                                          ),
                                         ),
                                         subtitle: Text(
-                                          "Quantity: $quantity",
+                                          "Qty: $quantity",
                                           style: TextStyle(
                                             color: textColor.withOpacity(0.7),
                                           ),
                                         ),
                                         trailing: Text(
                                           "₹${price * quantity}",
-                                          style: TextStyle(color: textColor),
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w500,
+                                            color: textColor,
+                                          ),
                                         ),
                                       );
                                     },
@@ -237,26 +281,33 @@ class _OrderVerificationPageState extends State<OrderVerificationPage> {
                             },
                           ),
                         ),
-                        const SizedBox(height: 16),
-                        isDelivered
-                            ? const SizedBox.shrink()
-                            : ElevatedButton.icon(
-                              onPressed:
-                                  status == 'Delivered'
-                                      ? null
-                                      : () async {
-                                        await orderRef.update({
-                                          'status': 'Delivered',
-                                        });
-                                        await triggerDeliveryFeedback();
-                                      },
-                              icon: const Icon(Icons.check),
-                              label: const Text("Confirm Delivery"),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.green,
-                                minimumSize: const Size.fromHeight(50),
-                              ),
-                            ),
+                        const SizedBox(height: 12),
+                        ElevatedButton.icon(
+                          onPressed:
+                              status == 'Delivered'
+                                  ? null
+                                  : () async {
+                                    await orderRef.update({
+                                      'status': 'Delivered',
+                                      'deliveredAt':
+                                          FieldValue.serverTimestamp(),
+                                    });
+                                    await triggerDeliveryFeedback();
+                                  },
+                          icon: const Icon(Icons.check),
+                          label: Text(
+                            status == 'Delivered'
+                                ? "Already Delivered"
+                                : "Confirm Delivery",
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor:
+                                status == 'Delivered'
+                                    ? Colors.grey
+                                    : Colors.green,
+                            minimumSize: const Size.fromHeight(50),
+                          ),
+                        ),
                       ],
                     ),
                   );
@@ -264,22 +315,20 @@ class _OrderVerificationPageState extends State<OrderVerificationPage> {
               );
             },
           ),
-
           if (isDelivered)
             Positioned.fill(
               child: Stack(
+                alignment: Alignment.center,
                 children: [
                   BackdropFilter(
                     filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
                     child: Container(color: Colors.black.withOpacity(0.3)),
                   ),
-                  Center(
-                    child: Lottie.asset(
-                      'assets/animations/delivery_verify.json',
-                      height: 220,
-                      width: 220,
-                      repeat: false,
-                    ),
+                  Lottie.asset(
+                    'assets/animations/delivery_verify.json',
+                    height: 320,
+                    width: 320,
+                    repeat: false,
                   ),
                 ],
               ),

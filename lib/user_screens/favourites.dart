@@ -80,18 +80,17 @@ class _FavouritesPageState extends State<FavouritesPage>
               }
 
               final userDoc = userSnapshot.data!;
-              final favorites =
-                  (userDoc['favorites'] as List?)
-                      ?.whereType<DocumentReference>()
-                      .toList() ??
-                  [];
+              final favoritesList = (userDoc['favorites'] as List?) ?? [];
 
-              if (favorites.isEmpty) {
+              if (favoritesList.isEmpty) {
                 return const Center(child: Text("No favorite items found."));
               }
 
+              final favoritesRefs =
+                  favoritesList.whereType<DocumentReference>().toList();
+
               return FutureBuilder<List<DocumentSnapshot>>(
-                future: Future.wait(favorites.map((ref) => ref.get())),
+                future: Future.wait(favoritesRefs.map((ref) => ref.get())),
                 builder: (context, favItemsSnapshot) {
                   if (favItemsSnapshot.connectionState ==
                       ConnectionState.waiting) {
@@ -127,9 +126,10 @@ class _FavouritesPageState extends State<FavouritesPage>
                         availability: !isOutOfStock,
                         showQuantityControl: isInCart,
                         isCanteenOnline: isOnline,
-                        isFavorite: true, // always true in this list
-                        onFavoriteToggle:
-                            () {}, // StreamBuilder will auto-refresh
+                        isFavorite: favoritesRefs.any(
+                          (ref) => ref.id == itemDoc.reference.id,
+                        ),
+                        onFavoriteToggle: () {}, // triggers rebuild
                         onAddToCart:
                             isOutOfStock
                                 ? null

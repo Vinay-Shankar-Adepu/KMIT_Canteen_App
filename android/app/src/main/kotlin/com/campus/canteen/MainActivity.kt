@@ -1,4 +1,5 @@
-package com.example.kmit_canteen_clean
+package com.campus.canteen
+
 
 import io.flutter.embedding.android.FlutterActivity
 

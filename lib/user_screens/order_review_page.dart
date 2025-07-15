@@ -49,7 +49,7 @@ class _OrderReviewPageState extends State<OrderReviewPage>
   }
 
   void _handlePaymentSuccess(PaymentSuccessResponse response) {
-    _placeOrder();
+    _placeOrder(); // Place the order after payment success
   }
 
   void _handlePaymentError(PaymentFailureResponse response) {
@@ -65,11 +65,14 @@ class _OrderReviewPageState extends State<OrderReviewPage>
     await _btnController.reverse();
 
     var options = {
-      'key': 'rzp_test_4sHatsNBeRQefo',
+      'key': 'rzp_test_PgaNhHg4o2ioLP',
       'amount': (totalPrice * 100).toInt(),
       'name': 'KMIT Canteen',
       'description': 'Order Payment',
-      'prefill': {'contact': '9999999999', 'email': 'test@kmit.in'},
+      'prefill': {'contact': '', 'email': ''},
+      'external': {
+        'wallets': ['paytm'],
+      },
     };
 
     try {
@@ -215,6 +218,27 @@ class _OrderReviewPageState extends State<OrderReviewPage>
                       ),
                     ),
                     const SizedBox(height: 16),
+
+                    // 🆕 Pickup Point Row
+                    Row(
+                      children: [
+                        const Icon(Icons.location_on, color: Colors.red),
+                        const SizedBox(width: 6),
+                        Text(
+                          "Pickup Point: ",
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          widget.selectedPickupPoint,
+                          style: theme.textTheme.titleMedium,
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 16),
+
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
@@ -251,7 +275,6 @@ class _OrderReviewPageState extends State<OrderReviewPage>
                           height: 50,
                           child: ElevatedButton(
                             onPressed: _isPlacingOrder ? null : _startPayment,
-
                             style: ElevatedButton.styleFrom(
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),

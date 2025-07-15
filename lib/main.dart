@@ -25,9 +25,13 @@ import 'admin_screens/manage_stocks.dart';
 import 'admin_screens/analytics_page.dart';
 import 'admin_screens/view_all_orders.dart';
 import 'admin_screens/qr_scanner_page.dart';
+import 'admin_screens/pickupControlPage.dart';
 
 // Login Page
 import 'admin_login_page.dart';
+
+// Login Page
+import 'splash_screen/animated_splash_page.dart';
 
 final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.system);
 
@@ -99,6 +103,7 @@ Future<Widget> getInitialScreen() async {
 
       final isAdmin = doc.data()?['isAdmin'] ?? false;
       await prefs.setBool('isAdmin', isAdmin);
+
       return isAdmin ? const AdminDashboard() : const HomeScreen();
     } catch (e) {
       debugPrint('Error: $e');
@@ -138,6 +143,7 @@ class MyApp extends StatelessWidget {
             '/manageStocks': (context) => const ManageStocksPage(),
             '/analytics': (context) => const AnalyticsPage(),
             '/scanner': (_) => const QRScannerPage(),
+            '/pickupControl': (_) => const PickupControlPage(),
           },
         );
       },
