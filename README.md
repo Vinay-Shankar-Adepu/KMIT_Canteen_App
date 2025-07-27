@@ -56,3 +56,24 @@ git clone https://github.com/Vinay-Shankar-Adepu/KMIT_Canteen_App.git
 cd KMIT_Canteen_App
 flutter pub get
 flutter run
+
+💡 Project Highlights
+📲 Used by 150+ students during live testing.
+
+🧠 Integrated ML for signature verification in related module.
+
+⚙️ Live menu sync and real-time order status across student and admin views.
+
+💼 Built as part of academic project (team of 5) — led as project lead and full-stack Flutter developer.
+
+⭐ Received 85%+ positive user feedback.
+
+🤝 Contributing
+Open to feedback and collaboration. Feel free to raise an issue or submit a PR!
+
+📬 Contact
+📧 Email: vinayshankar412@gmail.com
+
+🔗 LinkedIn: Vinay Adepu
+
+🌐 Portfolio: View My Portfolio
