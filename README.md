@@ -46,7 +46,7 @@ A real-time canteen ordering app built for the KMIT college using **Flutter**, *
 👉 [Download the APK from GitHub Releases](https://github.com/Vinay-Shankar-Adepu/KMIT_Canteen_App/releases)
 
 ---
-💡 Project Highlights
+## 💡 Project Highlights
 📲 Used by 150+ students during live testing.
 
 🧠 Integrated ML for signature verification in related module.
@@ -56,17 +56,17 @@ A real-time canteen ordering app built for the KMIT college using **Flutter**, *
 💼 Built as part of academic project (team of 5) — led as project lead and full-stack Flutter developer.
 
 ⭐ Received 85%+ positive user feedback.
-
-🤝 Contributing
+---
+## 🤝 Contributing
 Open to feedback and collaboration. Feel free to raise an issue or submit a PR!
-
-📬 Contact
+---
+## 📬 Contact
 📧 Email: vinayshankar412@gmail.com
 
 🔗 LinkedIn: Vinay Adepu
 
 🌐 Portfolio: View My Portfolio
-
+---
 ## 🚀 Getting Started
 
 To run the app locally:
