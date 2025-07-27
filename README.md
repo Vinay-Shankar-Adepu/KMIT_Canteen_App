@@ -1,48 +1,55 @@
 # 🍽️ KMIT Canteen App
 
-A real-time food ordering app built for the KMIT college canteen using **Flutter**, **Firebase**, and **Razorpay**. Designed to streamline student orders and pickup flow, this mobile application features live menu browsing, secure payments, and admin order management.
+A real-time canteen ordering app built for the KMIT college using **Flutter**, **Firebase**, and **Razorpay**. Designed for students to easily browse menus, place orders, pay digitally, and pick up food using a QR-based system — while admins manage everything live from a dashboard.
+
+---
+
+## 🎬 App Promo
+
+> Watch the official app promo video showcasing the features, UI, and flow of the KMIT Canteen App.
+
+📽️ [Click here to watch the App Promo Video](https://drive.google.com/file/d/17ddwbyKZuIdzqk16ts-QsFB7ipFfAOTX/view?usp=sharing)
 
 ---
 
 ## 📱 Features
 
-- 🔐 **User Authentication** via Firebase Auth
-- 🧾 **Menu Browsing** with categories & special items
-- 🛒 **Add to Cart** with quantity tracking (Hive)
-- 💸 **Razorpay Integration** for in-app payments
-- 📦 **Live Order Tracking** for users and admin
-- 🧾 **QR-Based Pickup System** for contactless delivery
-- 🎛️ **Admin Dashboard** to manage menu & update order status
-- ❤️ **Favorites System** stored per user
-- 🌗 Dark Mode support (optional)
+- 🔐 Firebase Authentication for secure student login
+- 🧾 Menu browsing with **Today’s Specials** and category filters
+- 🛒 Add-to-cart with quantity tracking (using Hive)
+- 💳 Razorpay integration for smooth payments
+- 📦 Live order status and QR-based pickup
+- 🎛️ Admin dashboard to manage menu, update status, and view orders
+- ❤️ Favorite items stored per user with Firestore
+- 📲 Clean UI with custom theming and animations
 
 ---
 
-## 🔧 Tech Stack
+## 🛠️ Tech Stack
 
-| Frontend        | Backend/Services         | Others                     |
-|-----------------|--------------------------|----------------------------|
-| Flutter, Dart   | Firebase Firestore, Auth | Hive, Razorpay, Provider  |
+| Frontend        | Backend/Services          | Others                     |
+|-----------------|---------------------------|----------------------------|
+| Flutter, Dart   | Firebase Firestore, Auth  | Hive, Razorpay, Provider   |
 
 ---
 
 ## 📸 Screenshots
 
-| Student View | Admin Dashboard |
-|--------------|-----------------|
-| _Add screenshots here_ | _Add screenshots here_ |
+| Student Interface | Admin Dashboard |
+|-------------------|------------------|
+| *(Add screenshots here)* | *(Add screenshots here)* |
 
 ---
 
-## 🔗 APK Download
+## 📦 APK Download
 
-- 👉 [**Download APK** (GitHub Release)](https://github.com/Vinay-Shankar-Adepu/KMIT_Canteen_App/releases)
+👉 [Download the APK from GitHub Releases](https://github.com/Vinay-Shankar-Adepu/KMIT_Canteen_App/releases)
 
 ---
 
-## 🛠️ Getting Started
+## 🚀 Getting Started
 
-To run this project locally:
+To run the app locally:
 
 ```bash
 git clone https://github.com/Vinay-Shankar-Adepu/KMIT_Canteen_App.git
