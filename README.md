@@ -55,7 +55,6 @@ A real-time canteen ordering app built for the KMIT college using **Flutter**, *
 
 💼 Built as part of academic project (team of 5) — led as project lead and full-stack Flutter developer.
 
-⭐ Received 85%+ positive user feedback.
 ---
 ## 🤝 Contributing
 Open to feedback and collaboration. Feel free to raise an issue or submit a PR!
