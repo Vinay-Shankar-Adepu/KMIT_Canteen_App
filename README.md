@@ -33,14 +33,6 @@ A real-time canteen ordering app built for the KMIT college using **Flutter**, *
 
 ---
 
-## 📸 Screenshots
-
-| Student Interface | Admin Dashboard |
-|-------------------|------------------|
-| *(Add screenshots here)* | *(Add screenshots here)* |
-
----
-
 ## 📦 APK Download
 
 👉 [Download the APK from GitHub Releases](https://github.com/Vinay-Shankar-Adepu/KMIT_Canteen_App/releases/latest)
